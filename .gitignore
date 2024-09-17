@@ -10,6 +10,8 @@ cmake-build-*/
 # Build Folders
 out/
 build/
+bin/
+obj/
 
 # mpeltonen/sbt-idea plugin
 .idea_modules/
