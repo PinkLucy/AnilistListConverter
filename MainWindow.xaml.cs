@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
 using AniListNet;
 using AniListNet.Objects;
@@ -22,11 +23,13 @@ public partial class MainWindow
     public MainWindow()
     {
         InitializeComponent();
+        this.MouseDown += delegate (object sender, MouseButtonEventArgs e) { if (e.ChangedButton == MouseButton.Left) DragMove(); };
     }
     
     private void ExitButton_Click(object sender, RoutedEventArgs e)
     {
-        Application.Current.Shutdown();
+        Environment.Exit(0);
+
     }
 
     private void ApiButton_OnClick(object sender, RoutedEventArgs e)
@@ -90,6 +93,8 @@ public partial class MainWindow
         MediaType originalType;
         MediaType newType;
         
+        Random random = new Random();
+        
         if (!direction)
         {
             originalType = MediaType.Manga;
@@ -102,10 +107,35 @@ public partial class MainWindow
         }
         
         var user = await aniClient.GetAuthenticatedUserAsync();
-        
-        var mediaEntries = await aniClient.GetUserEntriesAsync(user.Id);
 
-        if (mediaEntries.Data.Length <= 0)
+        var entryFilter = new MediaEntryFilter
+        {
+            Type = originalType,
+        };
+
+        int page = 0;
+        
+        var pagination = new AniPaginationOptions(page, 500);
+        
+        var mediaEntryCollection = await aniClient.GetUserEntryCollectionAsync(user.Id, originalType, pagination);
+        
+        List<MediaEntry> entries = new List<MediaEntry>();
+
+        do
+        {
+            var list = mediaEntryCollection.Lists.First();
+            entries.AddRange(list.Entries);
+
+            if (mediaEntryCollection.HasNextChunk)
+            {
+                page++;
+                pagination = new AniPaginationOptions(page, 500);
+                mediaEntryCollection = await aniClient.GetUserEntryCollectionAsync(user.Id, originalType, pagination);
+            }
+
+        } while (mediaEntryCollection.HasNextChunk);
+
+        if (entries.Count <= 0)
         {
             Confirm.Width = 500;
             Confirm.Content = "Could not find User Lists.";
@@ -114,20 +144,31 @@ public partial class MainWindow
         }
         
         Progress.Visibility= Visibility.Visible;
-
-        // ReSharper disable once PossibleLossOfFraction
-        Double progressPerEntry = 100 / mediaEntries.Data.Length ;
+        
+        Confirm.Background = new SolidColorBrush(Colors.GreenYellow);
+        
+        Double progressPerEntry = 100.0 / entries.Count ;
         
         Double currentProgress = 0;
+        
+        int currentEntry = 0;
         
 
         List<string?> notFound = new List<string?>();
 
-        foreach (var data in mediaEntries.Data)
+        foreach (var data in entries)
         {
             currentProgress = currentProgress + progressPerEntry;
             
             Progress.Value = currentProgress;
+            
+            Confirm.Content = $"Moving {entries.Count - currentEntry} Entries.";
+
+            currentEntry++;
+            
+            int delayTime = random.Next(6000,7000);
+            
+            await Task.Delay(delayTime);
             
             if (data.Media.Type != originalType)
             {
@@ -159,8 +200,15 @@ public partial class MainWindow
                     }
                 }
             }
+            else
+            {
+                continue;
+            }
 
             await aniClient.DeleteMediaEntryAsync(data.Id);
+            
+            if (newID == 0)
+                continue;
 
             var mutation = new MediaEntryMutation
             {
