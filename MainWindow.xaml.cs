@@ -123,6 +123,14 @@ public partial class MainWindow
         var pagination = new AniPaginationOptions(page, 500);
         
         var mediaEntryCollection = await aniClient.GetUserEntryCollectionAsync(user.Id, originalType, pagination);
+
+        if (mediaEntryCollection.Lists.Length <= 0)
+        {
+            Confirm.Width = 500;
+            Confirm.Content = "No Entries found.";
+            Confirm.Background = new SolidColorBrush(Colors.Coral);
+            return;
+        }
         
         List<MediaEntry> entries = new List<MediaEntry>();
 
@@ -143,7 +151,7 @@ public partial class MainWindow
         if (entries.Count <= 0)
         {
             Confirm.Width = 500;
-            Confirm.Content = "Could not find User Lists.";
+            Confirm.Content = "No Entries found.";
             Confirm.Background = new SolidColorBrush(Colors.Coral);
             return;
         }
