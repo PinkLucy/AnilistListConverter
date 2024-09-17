@@ -143,6 +143,7 @@ public partial class MainWindow
                 Sort = MediaSort.Popularity,
                 
             };
+            
             var results = aniClient.SearchMediaAsync(filter, new AniPaginationOptions(1, 20)).Result;
 
             if (results.TotalCount > 0)
@@ -158,6 +159,8 @@ public partial class MainWindow
                     }
                 }
             }
+
+            await aniClient.DeleteMediaEntryAsync(data.Id);
 
             var mutation = new MediaEntryMutation
             {
