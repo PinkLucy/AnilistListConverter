@@ -207,6 +207,7 @@ public partial class MainWindow
             }
             else
             {
+                await aniClient.DeleteMediaEntryAsync(data.Id);
                 continue;
             }
 
