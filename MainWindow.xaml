@@ -1,6 +1,7 @@
 ﻿<Window x:Class="AnilistListConverter.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         Title="AnilistListConverter"
         Height="450" 
         Width="800"
@@ -54,7 +55,6 @@
                         <RowDefinition Height="*"/>     <!-- Main Input Row -->
                         <RowDefinition Height="*"/> 
                         <RowDefinition Height="*"/>
-                        <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />   <!-- Single Column spanning entire width -->
@@ -70,12 +70,10 @@
                                          IsEnabled="False"/>
                 
                     <ToggleButton Grid.Row="2" x:Name="ToggleList" Width="300" Height="35" IsEnabled="False"
-                                  Content="Move Manga to Anime"/>
-                    
-                    <ToggleButton Grid.Row="3" x:Name="TogglePlannedAll" Width="300" Height="35" IsEnabled="False"
-                                  Content="Move only Planned"/>
+                                  Content="Move Manga to Anime"
+                                  Click="ToggleList_OnClick"/>
                 
-                    <Button Grid.Row="4" x:Name="Confirm" Width="300" Height="35" IsEnabled="False" 
+                    <Button Grid.Row="3" x:Name="Confirm" Width="300" Height="35" IsEnabled="False" 
                             Content="Please copy your Api Token" FontSize="18"
                             Click="ConfirmSettings_OnClick"/>
                 </Grid>
