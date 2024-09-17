@@ -1,5 +1,5 @@
 # AnilistConverter
-A simple XAML Tool to Convert Lists from Manga to Anime or Anime to Manga.
+A simple Tool to Convert Anilist Lists from Manga to Anime or Anime to Manga. Written in C# & XAML.
 
 ## How it works
 It opens a Website to authorize the App, you get an API Token back, paste that in the app in the correct field.
