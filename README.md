@@ -6,8 +6,6 @@ It opens a Website to authorize the App, you get an API Token back, paste that i
 
 After that you simply select if you want to convert Anime to Manga or Manga to Anime
 
-Then select the range (Only Planned or All) & click the Start button.
-
 Now you see your list get converted, with a progress bar and everything.
 
-Should the app not be able to find a entry as Anime or Manga, it will get displayed afterwards as a List.
+Should the app not be able to find e.g. an Manga not in Anime form, it will get deleted from the Manga List.
