@@ -103,7 +103,7 @@ public partial class MainWindow
         
         var user = await aniClient.GetAuthenticatedUserAsync();
         
-        var mediaEntries = aniClient.GetUserEntriesAsync(user.Id).Result;
+        var mediaEntries = await aniClient.GetUserEntriesAsync(user.Id);
 
         if (mediaEntries.Data.Length <= 0)
         {
@@ -144,7 +144,7 @@ public partial class MainWindow
                 
             };
             
-            var results = aniClient.SearchMediaAsync(filter, new AniPaginationOptions(1, 20)).Result;
+            var results = await aniClient.SearchMediaAsync(filter, new AniPaginationOptions(1, 20));
 
             if (results.TotalCount > 0)
             {
