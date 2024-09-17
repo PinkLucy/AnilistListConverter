@@ -8,4 +8,4 @@ After that you simply select if you want to convert Anime to Manga or Manga to A
 
 Now you see your list get converted, with a progress bar and everything.
 
-Should the App not be able to find e.g. an Manga not in Anime form, it will get deleted from the Manga List.
+Should the App not be able to find e.g. an Manga in Anime form, it will get deleted from the Manga List.
