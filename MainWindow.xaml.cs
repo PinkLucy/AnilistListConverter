@@ -74,6 +74,7 @@ public partial class MainWindow
             }
             else
             {
+                ApiButton.IsEnabled = false;
                 ToggleList.IsEnabled = true;
                 Confirm.IsEnabled = true;
                 Confirm.Content = "Click to move Entries.";
@@ -105,6 +106,8 @@ public partial class MainWindow
             originalType = MediaType.Anime;
             newType = MediaType.Manga;
         }
+        
+        Confirm.IsEnabled = false;
         
         var user = await aniClient.GetAuthenticatedUserAsync();
 
@@ -145,7 +148,7 @@ public partial class MainWindow
         
         Progress.Visibility= Visibility.Visible;
         
-        Confirm.Background = new SolidColorBrush(Colors.GreenYellow);
+        Confirm.Background = new SolidColorBrush(Colors.ForestGreen);
         
         Double progressPerEntry = 100.0 / entries.Count ;
         
@@ -221,6 +224,7 @@ public partial class MainWindow
 
         }
         
+        Confirm.Content = $"Moved all Entries.";
         
     }
     
