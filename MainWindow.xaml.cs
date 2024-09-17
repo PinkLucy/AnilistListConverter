@@ -75,6 +75,7 @@ public partial class MainWindow
             else
             {
                 ApiButton.IsEnabled = false;
+                ApiKey.IsEnabled = false;
                 ToggleList.IsEnabled = true;
                 Confirm.IsEnabled = true;
                 Confirm.Content = "Click to move Entries.";
@@ -108,6 +109,7 @@ public partial class MainWindow
         }
         
         Confirm.IsEnabled = false;
+        ToggleList.IsEnabled = false;
         
         var user = await aniClient.GetAuthenticatedUserAsync();
 
