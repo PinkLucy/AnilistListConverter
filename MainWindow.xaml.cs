@@ -188,6 +188,11 @@ public partial class MainWindow
                 continue;
             }
             
+            if (data.Status != MediaEntryStatus.Planning)
+            {
+                continue;
+            }
+            
             int newID = 0;
             
             var filter = new SearchMediaFilter
