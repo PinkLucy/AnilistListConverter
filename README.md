@@ -1,5 +1,6 @@
 # Anilist List Converter
 A simple Tool to Convert Anilist Lists from Manga to Anime or Anime to Manga. Written in C# & XAML.
+
 Update v2: Now it only Converts Entries that have the status "Planned".
 
 ## How it works
