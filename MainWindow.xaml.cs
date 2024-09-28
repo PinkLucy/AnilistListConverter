@@ -84,7 +84,7 @@ public partial class MainWindow
         else
         {
             //Move the Entries.
-            bool toggle = ToggleList.IsChecked.GetValueOrDefault();
+            bool toggle = ToggleList.IsChecked.Value;
             MoveLists(toggle);
         }
     }
@@ -120,7 +120,7 @@ public partial class MainWindow
 
         int page = 0;
         
-        var pagination = new AniPaginationOptions(page, 500);
+        var pagination = new AniPaginationOptions(page, 25);
         
         var mediaEntryCollection = await aniClient.GetUserEntryCollectionAsync(user.Id, originalType, pagination);
 
@@ -136,13 +136,15 @@ public partial class MainWindow
 
         do
         {
-            var list = mediaEntryCollection.Lists.First();
-            entries.AddRange(list.Entries);
+            foreach (var list in mediaEntryCollection.Lists)
+            {
+                entries.AddRange(list.Entries);
+            }
 
             if (mediaEntryCollection.HasNextChunk)
             {
                 page++;
-                pagination = new AniPaginationOptions(page, 500);
+                pagination = new AniPaginationOptions(page, 25);
                 mediaEntryCollection = await aniClient.GetUserEntryCollectionAsync(user.Id, originalType, pagination);
             }
 
