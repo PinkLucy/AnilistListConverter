@@ -132,13 +132,13 @@ public partial class MainWindow
             return;
         }
         
-        List<MediaEntry> entries = new List<MediaEntry>();
+        List<MediaEntry> unfilteredEntries = new List<MediaEntry>();
 
         do
         {
             foreach (var list in mediaEntryCollection.Lists)
             {
-                entries.AddRange(list.Entries);
+                unfilteredEntries.AddRange(list.Entries);
             }
 
             if (mediaEntryCollection.HasNextChunk)
@@ -150,13 +150,35 @@ public partial class MainWindow
 
         } while (mediaEntryCollection.HasNextChunk);
 
-        if (entries.Count <= 0)
+        if (unfilteredEntries.Count <= 0)
         {
             Confirm.Width = 500;
             Confirm.Content = "No Entries found.";
             Confirm.Background = new SolidColorBrush(Colors.Coral);
             return;
         }
+        
+        List<MediaEntry> entries = new List<MediaEntry>();
+        
+        // API Optimizisations, check beforehand, instead of spamming the API
+
+        foreach (var entry in unfilteredEntries)
+        {
+            
+            if (entry.Media.Type != originalType)
+            {
+                continue;
+            }
+            
+            if (entry.Status != MediaEntryStatus.Planning)
+            {
+                continue;
+            }
+            
+            entries.Add(entry);
+            
+        }
+        
         
         Progress.Visibility= Visibility.Visible;
         
@@ -184,16 +206,6 @@ public partial class MainWindow
             int delayTime = random.Next(6000,7000);
             
             await Task.Delay(delayTime);
-            
-            if (data.Media.Type != originalType)
-            {
-                continue;
-            }
-            
-            if (data.Status != MediaEntryStatus.Planning)
-            {
-                continue;
-            }
             
             int newID = 0;
             
