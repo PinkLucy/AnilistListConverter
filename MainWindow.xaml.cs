@@ -203,7 +203,7 @@ public partial class MainWindow
 
             currentEntry++;
             
-            int delayTime = random.Next(6000,7000);
+            int delayTime = random.Next(2000,4000);
             
             await Task.Delay(delayTime);
             
