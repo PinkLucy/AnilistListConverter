@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using AniListNet;
@@ -93,6 +94,8 @@ public partial class MainWindow
     {
         MediaType originalType;
         MediaType newType;
+        
+        Random random = new Random();
         
         if (!direction)
         {
@@ -200,7 +203,7 @@ public partial class MainWindow
 
             currentEntry++;
             
-            int delayTime = 5000;
+            int delayTime = random.Next(2000,4000);
             
             await Task.Delay(delayTime);
             
