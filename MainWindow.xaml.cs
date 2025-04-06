@@ -11,25 +11,21 @@ using Process = System.Diagnostics.Process;
 
 namespace AnilistListConverter;
 
-/// <summary>
-/// Interaction logic for MainWindow.xaml
-/// </summary>
 public partial class MainWindow
 {
     private const string AuthUrl = "https://anilist.co/api/v2/oauth/authorize?client_id=21239&response_type=token";
-    
+
     AniClient aniClient = new AniClient();
-    
+
     public MainWindow()
     {
         InitializeComponent();
         this.MouseDown += delegate (object sender, MouseButtonEventArgs e) { if (e.ChangedButton == MouseButton.Left) DragMove(); };
     }
-    
+
     private void ExitButton_Click(object sender, RoutedEventArgs e)
     {
         Environment.Exit(0);
-
     }
 
     private void ApiButton_OnClick(object sender, RoutedEventArgs e)
@@ -40,31 +36,22 @@ public partial class MainWindow
             UseShellExecute = true
         });
 
-        // Enable the ApiKey TextBox
         ApiKey.IsEnabled = true;
         Confirm.Content = "Click to check Api Token";
         Confirm.IsEnabled = true;
     }
-    
+
     private void ToggleList_OnClick(object sender, RoutedEventArgs e)
     {
         bool toggle = ToggleList.IsChecked.GetValueOrDefault();
-        
-        if (toggle)
-        {
-            ToggleList.Content = "Move Anime to Manga";
-        }
-        else
-        {
-            ToggleList.Content = "Move Manga to Anime";
-        }
+
+        ToggleList.Content = toggle ? "Move Anime to Manga" : "Move Manga to Anime";
     }
 
     private async void ConfirmSettings_OnClick(object sender, RoutedEventArgs e)
     {
         if (!ToggleList.IsEnabled)
         {
-            //Check the Api Key.
             var result = await aniClient.TryAuthenticateAsync(ApiKey.Text);
             if (!aniClient.IsAuthenticated)
             {
@@ -83,179 +70,201 @@ public partial class MainWindow
         }
         else
         {
-            //Move the Entries.
             bool toggle = ToggleList.IsChecked.Value;
             MoveLists(toggle);
         }
     }
-    
 
     private async void MoveLists(bool direction)
     {
-        MediaType originalType;
-        MediaType newType;
-        
-        Random random = new Random();
-        
-        if (!direction)
+        try
         {
-            originalType = MediaType.Manga;
-            newType = MediaType.Anime;
-        }
-        else
-        {
-            originalType = MediaType.Anime;
-            newType = MediaType.Manga;
-        }
-        
-        Confirm.IsEnabled = false;
-        ToggleList.IsEnabled = false;
-        
-        var user = await aniClient.GetAuthenticatedUserAsync();
+            
+            MediaType originalType = direction ? MediaType.Anime : MediaType.Manga;
+            Logger.LogInfo("OriginalType: " + originalType.ToString());
+            MediaType newType = direction ? MediaType.Manga : MediaType.Anime;
+            Random random = new Random();
 
-        var entryFilter = new MediaEntryFilter
-        {
-            Type = originalType,
-        };
-
-        int page = 0;
-        
-        var pagination = new AniPaginationOptions(page, 25);
-        
-        var mediaEntryCollection = await aniClient.GetUserEntryCollectionAsync(user.Id, originalType, pagination);
-
-        if (mediaEntryCollection.Lists.Length <= 0)
-        {
-            Confirm.Width = 500;
-            Confirm.Content = "No Entries found.";
-            Confirm.Background = new SolidColorBrush(Colors.Coral);
-            return;
-        }
-        
-        List<MediaEntry> unfilteredEntries = new List<MediaEntry>();
-
-        do
-        {
-            foreach (var list in mediaEntryCollection.Lists)
+            Confirm.IsEnabled = false;
+            ToggleList.IsEnabled = false;
+            
+            if (!aniClient.IsAuthenticated)
             {
-                unfilteredEntries.AddRange(list.Entries);
+                Logger.LogException("MainWindow.MoveLists", new Exception("AniClient is not authenticated."));
+                Confirm.Content = "AniList authentication failed. Please check your token.";
+                Confirm.Background = new SolidColorBrush(Colors.Coral);
+                return;
             }
 
-            if (mediaEntryCollection.HasNextChunk)
+            var user = await aniClient.GetAuthenticatedUserAsync();
+            
+            if (user == null)
             {
-                page++;
-                pagination = new AniPaginationOptions(page, 25);
-                mediaEntryCollection = await aniClient.GetUserEntryCollectionAsync(user.Id, originalType, pagination);
+                Logger.LogException("MainWindow.MoveLists", new Exception("Authenticated user is null."));
+                Confirm.Content = "Failed to fetch user info. Check your token.";
+                Confirm.Background = new SolidColorBrush(Colors.Coral);
+                return;
             }
 
-        } while (mediaEntryCollection.HasNextChunk);
 
-        if (unfilteredEntries.Count <= 0)
-        {
-            Confirm.Width = 500;
-            Confirm.Content = "No Entries found.";
-            Confirm.Background = new SolidColorBrush(Colors.Coral);
-            return;
-        }
-        
-        List<MediaEntry> entries = new List<MediaEntry>();
-        
-        // API Optimizisations, check beforehand, instead of spamming the API
-
-        foreach (var entry in unfilteredEntries)
-        {
+            int page = 0;
+            var pagination = new AniPaginationOptions(page, 25);
             
-            if (entry.Media.Type != originalType)
+            if (pagination == null)
             {
-                continue;
+                Logger.LogInfo("Pagination object is null.");
+                return;
             }
-            
-            if (entry.Status != MediaEntryStatus.Planning)
+
+            Logger.LogInfo($"Pagination pageIndex={pagination.PageIndex}, pageSize={pagination.PageSize}");
+
+
+            MediaEntryCollection? mediaEntryCollection = null;
+
+            try
             {
-                continue;
-            }
-            
-            entries.Add(entry);
-            
-        }
-        
-        
-        Progress.Visibility= Visibility.Visible;
-        
-        Confirm.Background = new SolidColorBrush(Colors.ForestGreen);
-        
-        Double progressPerEntry = 100.0 / entries.Count ;
-        
-        Double currentProgress = 0;
-        
-        int currentEntry = 0;
-        
-
-        List<string?> notFound = new List<string?>();
-
-        foreach (var data in entries)
-        {
-            currentProgress = currentProgress + progressPerEntry;
-            
-            Progress.Value = currentProgress;
-            
-            Confirm.Content = $"Moving {entries.Count - currentEntry} Entries.";
-
-            currentEntry++;
-            
-            int delayTime = random.Next(6000,7000);
-            
-            await Task.Delay(delayTime);
-            
-            int newID = 0;
-            
-            var filter = new SearchMediaFilter
-            {
-                Query = data.Media.Title.NativeTitle,
-                Type = newType,
-                Sort = MediaSort.Popularity,
-                
-            };
-            
-            var results = await aniClient.SearchMediaAsync(filter, new AniPaginationOptions(1, 20));
-
-            if (results.TotalCount > 0)
-            {
-                foreach (var result in results.Data)
+                Logger.LogInfo($"Calling GetUserEntryCollectionAsync with userId={user.Id}, type={originalType}, page={page}");
+                mediaEntryCollection = await aniClient.GetUserEntryCollectionAsync(user.Id, originalType, new AniPaginationOptions(page, 25));
+    
+                if (mediaEntryCollection == null)
                 {
-                    int score = Fuzz.Ratio(result.Title.NativeTitle, data.Media.Title.NativeTitle);
-                    
-                    if (score >= 85)
-                    {
-                        newID = result.Id;
-                        break;
-                    }
+                    Logger.LogException("MoveLists", new Exception("mediaEntryCollection is null"));
+                    return;
+                }
+
+                if (mediaEntryCollection.Lists == null)
+                {
+                    Logger.LogException("MoveLists", new Exception("mediaEntryCollection.Lists is null"));
+                    return;
                 }
             }
-            else
+            catch (Exception ex)
             {
-                await aniClient.DeleteMediaEntryAsync(data.Id);
-                continue;
+                Logger.LogException("MoveLists: GetUserEntryCollectionAsync", ex);
+                return;
             }
 
-            await aniClient.DeleteMediaEntryAsync(data.Id);
-            
-            if (newID == 0)
-                continue;
-
-            var mutation = new MediaEntryMutation
+            if (mediaEntryCollection.Lists.Length <= 0)
             {
-                // Set properties of the mutation object as needed
-                Status = MediaEntryStatus.Planning,
-                Progress = 0
-            };
+                Confirm.Width = 500;
+                Confirm.Content = "No Entries found.";
+                Confirm.Background = new SolidColorBrush(Colors.Coral);
+                return;
+            }
             
-            await aniClient.SaveMediaEntryAsync(newID,mutation);
+            List<MediaEntry> unfilteredEntries = new();
+            Logger.LogInfo("Done adding, filtering...");
+            do
+            {
+                foreach (var list in mediaEntryCollection.Lists)
+                {
+                    unfilteredEntries.AddRange(list.Entries);
+                }
+                await Task.Delay(random.Next(6000, 7000));
+                if (mediaEntryCollection.HasNextChunk)
+                {
+                    page++;
+                    pagination = new AniPaginationOptions(page, 25);
+                    mediaEntryCollection = await aniClient.GetUserEntryCollectionAsync(user.Id, originalType, pagination);
+                }
+            } while (mediaEntryCollection.HasNextChunk);
+            
+            Logger.LogInfo("Added UnfilteredEntries successfully.");
 
+            if (unfilteredEntries.Count <= 0)
+            {
+                Confirm.Width = 500;
+                Confirm.Content = "No Entries found.";
+                Confirm.Background = new SolidColorBrush(Colors.Coral);
+                return;
+            }
+
+            List<MediaEntry> entries = unfilteredEntries
+                .Where(e => e.Media != null && e.Media.Type == originalType && e.Status == MediaEntryStatus.Planning)
+                .ToList();
+            
+            Logger.LogInfo("Created entries successfully.");
+            
+            Progress.Visibility = Visibility.Visible;
+            Confirm.Background = new SolidColorBrush(Colors.ForestGreen);
+
+            double progressPerEntry = 100.0 / entries.Count;
+            double currentProgress = 0;
+            int currentEntry = 0;
+
+            List<string?> notFound = new();
+
+            foreach (var data in entries)
+            {
+                try
+                {
+                    Logger.LogInfo($"Moving {data.Media.Title.EnglishTitle}");
+                    
+                    currentProgress += progressPerEntry;
+                    Progress.Value = currentProgress;
+                    Confirm.Content = $"Moving {entries.Count - currentEntry} Entries.";
+                    currentEntry++;
+
+                    await Task.Delay(random.Next(6000, 7000));
+
+                    var nativeTitle = data.Media.Title?.NativeTitle;
+                    if (string.IsNullOrWhiteSpace(nativeTitle))
+                    {
+                        notFound.Add(null);
+                        continue;
+                    }
+
+                    var filter = new SearchMediaFilter
+                    {
+                        Query = nativeTitle,
+                        Type = newType,
+                        Sort = MediaSort.Popularity
+                    };
+
+                    var results = await aniClient.SearchMediaAsync(filter, new AniPaginationOptions(1, 20));
+
+                    int newID = 0;
+                    if (results.TotalCount > 0)
+                    {
+                        foreach (var result in results.Data)
+                        {
+                            if (string.IsNullOrEmpty(result.Title?.NativeTitle))
+                                continue;
+                            Logger.LogInfo($"Processing entry ID: {data.Id}, Title: {data.Media?.Title?.NativeTitle}, MediaType: {data.Media?.Type}");
+                            int score = Fuzz.Ratio(result.Title.NativeTitle, nativeTitle);
+                            if (score >= 85)
+                            {
+                                newID = result.Id;
+                                break;
+                            }
+                        }
+                    }
+                    await Task.Delay(random.Next(6000, 7000));
+                    await aniClient.DeleteMediaEntryAsync(data.Id);
+
+                    if (newID == 0)
+                        continue;
+
+                    var mutation = new MediaEntryMutation
+                    {
+                        Status = MediaEntryStatus.Planning,
+                        Progress = 0
+                    };
+                    await Task.Delay(random.Next(6000, 7000));
+                    await aniClient.SaveMediaEntryAsync(newID, mutation);
+                }
+                catch (Exception ex)
+                {
+                    notFound.Add(data.Media?.Title?.NativeTitle ?? "Unknown");
+                    Console.WriteLine($"Error processing entry {data.Id}: {ex.Message}");
+                }
+            }
+
+            Confirm.Content = "Moved all Entries.";
         }
-        
-        Confirm.Content = $"Moved all Entries.";
-        
+        catch (Exception e)
+        {
+            Logger.LogException("MainWindow.MoveLists", e);
+        }
     }
-    
 }
