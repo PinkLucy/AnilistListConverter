@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         Title="AnilistListConverter"
-        Height="450" 
+        Height="500" 
         Width="800"
         ResizeMode="NoResize"
         AllowsTransparency="True"
@@ -32,6 +32,7 @@
                     <RowDefinition Height="Auto"/>   <!-- Title Row -->
                     <RowDefinition Height="*" />     <!-- Main Input Row -->
                     <RowDefinition Height="Auto"/>   <!-- Progress Bar Row -->
+                    <RowDefinition Height="Auto"/>   <!-- Infobox Row -->
                 </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />   <!-- Single Column spanning entire width -->
@@ -84,6 +85,9 @@
                              HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="10"
                              Visibility="Hidden"/>
 
+                <TextBox Grid.Row="3" x:Name="LogBox" FontSize="16" Width="600" Height="120"
+                         HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="10"
+                         Visibility="Visible" VerticalScrollBarVisibility="Visible"></TextBox>
             </Grid>
         </Border>
 

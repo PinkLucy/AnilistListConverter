@@ -41,15 +41,4 @@ public partial class App : Application
     }
 }
 
-public static class Logger
-{
-    public static void Log(string message)
-    {
-        MessageBox.Show(
-            message,
-            "A error occurred",
-            MessageBoxButton.OK,
-            MessageBoxImage.Error);
-    }
-}
 
