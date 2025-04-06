@@ -81,7 +81,7 @@ public partial class MainWindow
         {
             
             MediaType originalType = direction ? MediaType.Anime : MediaType.Manga;
-            Logger.LogInfo("OriginalType: " + originalType.ToString());
+            Logger.Log("OriginalType: " + originalType.ToString());
             MediaType newType = direction ? MediaType.Manga : MediaType.Anime;
             Random random = new Random();
 
@@ -90,7 +90,7 @@ public partial class MainWindow
             
             if (!aniClient.IsAuthenticated)
             {
-                Logger.LogException("MainWindow.MoveLists", new Exception("AniClient is not authenticated."));
+                Logger.Log("MainWindow.MoveLists: AniClient is not authenticated.");
                 Confirm.Content = "AniList authentication failed. Please check your token.";
                 Confirm.Background = new SolidColorBrush(Colors.Coral);
                 return;
@@ -100,7 +100,7 @@ public partial class MainWindow
             
             if (user == null)
             {
-                Logger.LogException("MainWindow.MoveLists", new Exception("Authenticated user is null."));
+                Logger.Log("MainWindow.MoveLists: Authenticated user is null.");
                 Confirm.Content = "Failed to fetch user info. Check your token.";
                 Confirm.Background = new SolidColorBrush(Colors.Coral);
                 return;
@@ -112,35 +112,23 @@ public partial class MainWindow
             
             if (pagination == null)
             {
-                Logger.LogInfo("Pagination object is null.");
+                Logger.Log("Pagination object is null.");
                 return;
             }
 
-            Logger.LogInfo($"Pagination pageIndex={pagination.PageIndex}, pageSize={pagination.PageSize}");
+            Logger.Log($"Pagination pageIndex={pagination.PageIndex}, pageSize={pagination.PageSize}");
 
 
             MediaEntryCollection? mediaEntryCollection = null;
 
             try
             {
-                Logger.LogInfo($"Calling GetUserEntryCollectionAsync with userId={user.Id}, type={originalType}, page={page}");
+                Logger.Log($"Calling GetUserEntryCollectionAsync with userId={user.Id}, type={originalType}, page={page}");
                 mediaEntryCollection = await aniClient.GetUserEntryCollectionAsync(user.Id, originalType, new AniPaginationOptions(page, 25));
-    
-                if (mediaEntryCollection == null)
-                {
-                    Logger.LogException("MoveLists", new Exception("mediaEntryCollection is null"));
-                    return;
-                }
-
-                if (mediaEntryCollection.Lists == null)
-                {
-                    Logger.LogException("MoveLists", new Exception("mediaEntryCollection.Lists is null"));
-                    return;
-                }
             }
             catch (Exception ex)
             {
-                Logger.LogException("MoveLists: GetUserEntryCollectionAsync", ex);
+                Logger.Log("MoveLists: GetUserEntryCollectionAsync");
                 return;
             }
 
@@ -153,7 +141,7 @@ public partial class MainWindow
             }
             
             List<MediaEntry> unfilteredEntries = new();
-            Logger.LogInfo("Done adding, filtering...");
+            Logger.Log("Done adding, filtering...");
             do
             {
                 foreach (var list in mediaEntryCollection.Lists)
@@ -169,7 +157,7 @@ public partial class MainWindow
                 }
             } while (mediaEntryCollection.HasNextChunk);
             
-            Logger.LogInfo("Added UnfilteredEntries successfully.");
+            Logger.Log("Added UnfilteredEntries successfully.");
 
             if (unfilteredEntries.Count <= 0)
             {
@@ -183,7 +171,7 @@ public partial class MainWindow
                 .Where(e => e.Media != null && e.Media.Type == originalType && e.Status == MediaEntryStatus.Planning)
                 .ToList();
             
-            Logger.LogInfo("Created entries successfully.");
+            Logger.Log("Created entries successfully.");
             
             Progress.Visibility = Visibility.Visible;
             Confirm.Background = new SolidColorBrush(Colors.ForestGreen);
@@ -198,7 +186,7 @@ public partial class MainWindow
             {
                 try
                 {
-                    Logger.LogInfo($"Moving {data.Media.Title.EnglishTitle}");
+                    Logger.Log($"Moving {data.Media.Title.EnglishTitle}");
                     
                     currentProgress += progressPerEntry;
                     Progress.Value = currentProgress;
@@ -230,7 +218,7 @@ public partial class MainWindow
                         {
                             if (string.IsNullOrEmpty(result.Title?.NativeTitle))
                                 continue;
-                            Logger.LogInfo($"Processing entry ID: {data.Id}, Title: {data.Media?.Title?.NativeTitle}, MediaType: {data.Media?.Type}");
+                            Logger.Log($"Processing entry ID: {data.Id}, Title: {data.Media?.Title?.NativeTitle}, MediaType: {data.Media?.Type}");
                             int score = Fuzz.Ratio(result.Title.NativeTitle, nativeTitle);
                             if (score >= 85)
                             {
@@ -262,9 +250,9 @@ public partial class MainWindow
 
             Confirm.Content = "Moved all Entries.";
         }
-        catch (Exception e)
+        catch (Exception ex)
         {
-            Logger.LogException("MainWindow.MoveLists", e);
+            Logger.Log($"MainWindow.MoveLists: {ex.Message}");
         }
     }
 }

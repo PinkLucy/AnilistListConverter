@@ -13,43 +13,43 @@ public partial class App : Application
     {
         base.OnStartup(e);
 
-        // Catch non-UI thread exceptions
+        // Add a global exception handler
         AppDomain.CurrentDomain.UnhandledException += (sender, args) =>
         {
             Exception ex = (Exception)args.ExceptionObject;
-            LogUnhandledException("AppDomain.CurrentDomain.UnhandledException", ex);
+            ShowErrorAndShutdown(ex);
         };
 
-        // Catch UI thread exceptions
+        // Also catch UI thread exceptions
         DispatcherUnhandledException += (sender, args) =>
         {
             Exception ex = args.Exception;
             args.Handled = true;
-            LogUnhandledException("Application.DispatcherUnhandledException", ex);
+            ShowErrorAndShutdown(ex);
         };
     }
 
-    private void LogUnhandledException(string source, Exception ex)
+    private void ShowErrorAndShutdown(Exception ex)
     {
-        Console.WriteLine($"[UNHANDLED EXCEPTION] ({source})");
-        Console.WriteLine($"Message: {ex.Message}");
-        Console.WriteLine($"Stack Trace:\n{ex.StackTrace}");
-        
+        MessageBox.Show(
+            $"A fatal error occurred:\n\n{ex.Message}\n\n{ex.StackTrace}",
+            "Unexpected Error",
+            MessageBoxButton.OK,
+            MessageBoxImage.Error);
+
+        Current.Shutdown(); // more graceful than Environment.Exit
     }
-    
-    
 }
+
 public static class Logger
 {
-    public static void LogException(string source, Exception ex)
+    public static void Log(string message)
     {
-        Console.WriteLine($"[EXCEPTION] ({source})");
-        Console.WriteLine($"Message: {ex.Message}");
-        Console.WriteLine($"Stack Trace:\n{ex.StackTrace}");
+        MessageBox.Show(
+            message,
+            "A error occurred",
+            MessageBoxButton.OK,
+            MessageBoxImage.Error);
     }
-    public static void LogInfo(string message)
-    {
-        Console.WriteLine($"[INFO] {message}");
-    }
-
 }
+
