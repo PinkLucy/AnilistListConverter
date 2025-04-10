@@ -11,21 +11,35 @@ using Process = System.Diagnostics.Process;
 
 namespace AnilistListConverter;
 
+
 public partial class MainWindow
 {
     private const string AuthUrl = "https://anilist.co/api/v2/oauth/authorize?client_id=21239&response_type=token";
 
     AniClient aniClient = new AniClient();
+    
+    int ratelimit = 3000;
 
     public MainWindow()
     {
         InitializeComponent();
+        aniClient.RateChanged += ChangeRatelimit;
+        ratelimit = (60000 / 30) + 1;
         this.MouseDown += delegate (object sender, MouseButtonEventArgs e) { if (e.ChangedButton == MouseButton.Left) DragMove(); };
     }
-
+    
     private void ExitButton_Click(object sender, RoutedEventArgs e)
     {
         Environment.Exit(0);
+    }
+    public void ChangeRatelimit(object? sender, AniRateEventArgs e)
+    {
+        int oldRate = ratelimit;
+        ratelimit = (60000 / (e.RateLimit - 60)) + 1;
+        if (oldRate != ratelimit)
+        {
+            LogBox.Text += "\n" + "New Rate limit. One API Call every " + ratelimit + "ms";
+        }
     }
 
     private void ApiButton_OnClick(object sender, RoutedEventArgs e)
@@ -98,6 +112,8 @@ public partial class MainWindow
                 return;
             }
 
+            await Task.Delay(ratelimit);
+
             var user = await aniClient.GetAuthenticatedUserAsync();
             
             if (user == null)
@@ -129,6 +145,7 @@ public partial class MainWindow
             {
                 LogBox.Text += "\n" + $"Calling GetUserEntryCollectionAsync with userId={user.Id}, type={originalType}, page={page}";
                 LogBox.ScrollToEnd();
+                await Task.Delay(ratelimit);
                 mediaEntryCollection = await aniClient.GetUserEntryCollectionAsync(user.Id, originalType, new AniPaginationOptions(page, 25));
             }
             catch (Exception ex)
@@ -155,7 +172,7 @@ public partial class MainWindow
                 {
                     unfilteredEntries.AddRange(list.Entries);
                 }
-                await Task.Delay(random.Next(6000, 7000));
+                await Task.Delay(ratelimit);
                 if (mediaEntryCollection.HasNextChunk)
                 {
                     page++;
@@ -216,6 +233,8 @@ public partial class MainWindow
                         Type = newType,
                         Sort = MediaSort.Popularity
                     };
+                    
+                    await Task.Delay(ratelimit);
 
                     var results = await aniClient.SearchMediaAsync(filter, new AniPaginationOptions(1, 20));
 
@@ -234,7 +253,7 @@ public partial class MainWindow
                             }
                         }
                     }
-                    await Task.Delay(random.Next(6000, 7000));
+                    await Task.Delay(ratelimit);
                     await aniClient.DeleteMediaEntryAsync(data.Id);
 
                     if (newID == 0)
@@ -245,7 +264,7 @@ public partial class MainWindow
                         Status = MediaEntryStatus.Planning,
                         Progress = 0
                     };
-                    await Task.Delay(random.Next(6000, 7000));
+                    await Task.Delay(ratelimit);
                     await aniClient.SaveMediaEntryAsync(newID, mutation);
                 }
                 catch (Exception ex)
