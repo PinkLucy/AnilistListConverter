@@ -24,7 +24,6 @@ public partial class MainWindow
     {
         InitializeComponent();
         aniClient.RateChanged += ChangeRatelimit;
-        ratelimit = (60000 / 30) + 1;
         this.MouseDown += delegate (object sender, MouseButtonEventArgs e) { if (e.ChangedButton == MouseButton.Left) DragMove(); };
     }
     
@@ -35,7 +34,7 @@ public partial class MainWindow
     public void ChangeRatelimit(object? sender, AniRateEventArgs e)
     {
         int oldRate = ratelimit;
-        ratelimit = (60000 / (e.RateLimit - 60)) + 1;
+        ratelimit = e.RateLimit;
         if (oldRate != ratelimit)
         {
             LogBox.Text += "\n" + "New Rate limit. One API Call every " + ratelimit + "ms";
